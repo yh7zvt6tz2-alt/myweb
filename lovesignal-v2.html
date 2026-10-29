@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>러브 시그널 - 오션 블루 테마</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Pretendard:wght@300;400;600;700&display=swap');
+    
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f2342 100%);
+      color: #f1f5f9;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .font-serif-custom {
+      font-family: 'Gowun Batang', serif;
+    }
+
+    /* 편지 봉투 애니메이션 */
+    .envelope-wrapper {
+      perspective: 1000px;
+    }
+
+    .envelope {
+      position: relative;
+      width: 280px;
+      height: 180px;
+      background-color: #1e3a8a;
+      border-radius: 0 0 12px 12px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), 0 0 15px rgba(59, 130, 246, 0.2);
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .envelope:hover {
+      transform: translateY(-5px);
+    }
+
+    .envelope-flap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      border-left: 140px solid transparent;
+      border-right: 140px solid transparent;
+      border-top: 110px solid #2563eb;
+      transform-origin: top;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 3;
+    }
+
+    .envelope.open .envelope-flap {
+      transform: rotateX(180deg);
+      z-index: 1;
+    }
+
+    .envelope-pocket {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      border-left: 140px solid #1d4ed8;
+      border-right: 140px solid #1d4ed8;
+      border-bottom: 100px solid #1e40af;
+      border-radius: 0 0 12px 12px;
+      z-index: 2;
+    }
+
+    .envelope-seal {
+      position: absolute;
+      top: 90px;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 44px;
+      height: 44px;
+      background: radial-gradient(circle, #60a5fa 0%, #2563eb 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      z-index: 4;
+      transition: opacity 0.4s ease;
+    }
+
+    .envelope.open .envelope-seal {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* 날아가는 하트 */
+    .flying-heart {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      font-size: 28px;
+      color: #60a5fa;
+      filter: drop-shadow(0 0 8px rgba(96, 165, 250, 0.8));
+      transition: all cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    /* 출연자 카드 */
+    .member-card {
+      transition: all 0.3s ease;
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .member-card.has-heart {
+      border-color: #60a5fa;
+      box-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
+      background: rgba(30, 58, 138, 0.4);
+    }
+
+    /* 배경 별 효과 */
+    .star {
+      position: absolute;
+      background-color: #93c5fd;
+      border-radius: 50%;
+      animation: twinkle linear infinite;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50% { opacity: 0.8; transform: scale(1.2); }
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen relative pb-12">
+
+  <!-- 배경 이펙트 -->
+  <div id="stars-container" class="fixed inset-0 pointer-events-none z-0"></div>
+
+  <!-- 상단 헤더 & 관리자 접근 -->
+  <header class="relative z-10 w-full max-w-5xl mx-auto px-6 pt-8 pb-4 flex justify-between items-center">
+    <div>
+      <h1 class="text-3xl font-bold font-serif-custom tracking-wide text-blue-200 flex items-center gap-2">
+        <i class="fa-solid fa-heart-pulse text-blue-400"></i> LOVE SIGNAL
+      </h1>
+      <p class="text-sm text-blue-300/70 mt-1">오늘의 마음이 담긴 시그널을 확인하세요</p>
+    </div>
+    
+    <!-- 관리자 모드 아이콘 -->
+    <button id="admin-btn" class="p-3 bg-slate-800/80 hover:bg-slate-700 text-blue-300 rounded-full border border-blue-500/30 transition shadow-lg">
+      <i class="fa-solid fa-key text-lg"></i>
+    </button>
+  </header>
+
+  <main class="relative z-10 w-full max-w-5xl mx-auto px-4 flex-1 flex flex-col justify-between">
+    
+    <!-- 1. 상단: 출연진 명단 (10명) -->
+    <section class="mt-4 mb-8">
+      <div class="text-center mb-6">
+        <span class="bg-blue-900/50 text-blue-300 text-xs px-3 py-1 rounded-full border border-blue-500/30">MEMBERS</span>
+        <h2 class="text-xl font-medium text-slate-200 mt-2">출연진 시그널 현황</h2>
+      </div>
+
+      <div id="members-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        <!-- JS로 10명 카드 생성됨 -->
+      </div>
+    </section>
+
+    <!-- 2. 하단: 시그널 보내기 편지 봉투 -->
+    <section class="flex flex-col items-center justify-center my-8">
+      <div id="envelope-container" class="envelope-wrapper">
+        <div id="envelope" class="envelope">
+          <div class="envelope-flap"></div>
+          <div class="envelope-pocket"></div>
+          <div class="envelope-seal">
+            <i class="fa-solid fa-heart text-white text-lg"></i>
+          </div>
+        </div>
+      </div>
+      <p id="instruction-text" class="text-sm text-blue-300/80 mt-6 font-serif-custom animate-pulse">
+        편지봉투를 클릭하여 오늘의 시그널을 확인하세요
+      </p>
+    </section>
+
+  </main>
+
+  <!-- 시그널 메시지 읽기 모달 -->
+  <div id="message-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-blue-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl relative text-center">
+      <button id="close-modal-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+      <div class="w-16 h-16 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl border border-blue-400/30">
+        <i class="fa-solid fa-envelope-open-text"></i>
+      </div>
+      <h3 id="modal-name" class="text-xl font-bold text-blue-200 mb-1">출연자 이름</h3>
+      <p class="text-xs text-blue-400 mb-4">전달된 시그널 메시지</p>
+      <div id="modal-text" class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 text-slate-200 text-sm leading-relaxed font-serif-custom min-h-[100px] flex items-center justify-center">
+        메시지 내용
+      </div>
+      <button id="confirm-modal-btn" class="mt-6 w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition">
+        확인
+      </button>
+    </div>
+  </div>
+
+  <!-- 관리자 모드 비밀번호 확인 모달 -->
+  <div id="admin-auth-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full text-center">
+      <h3 class="text-lg font-bold text-white mb-2">관리자 인증</h3>
+      <p class="text-xs text-slate-400 mb-4">설정 페이지에 접근하려면 비밀번호를 입력하세요.</p>
+      <input type="password" id="admin-pw-input" placeholder="비밀번호 입력" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white mb-4 text-center focus:outline-none focus:border-blue-500">
+      <div class="flex gap-2">
+        <button id="cancel-auth-btn" class="flex-1 py-2 bg-slate-800 text-slate-300 rounded-xl">취소</button>
+        <button id="submit-auth-btn" class="flex-1 py-2 bg-blue-600 text-white rounded-xl">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 관리자 설정 패널 -->
+  <div id="admin-panel-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-blue-500/30 rounded-2xl p-6 max-w-2xl w-full max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
+        <h3 class="text-lg font-bold text-blue-200"><i class="fa-solid fa-sliders mr-2"></i>관리자 설정 (명단 및 시그널 관리)</h3>
+        <button id="close-admin-btn" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto space-y-4 pr-2" id="admin-members-list">
+        <!-- JS로 관리자용 명단 편집 항목 생성 -->
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
+        <button id="change-pw-btn" class="text-xs text-slate-400 underline">비밀번호 변경</button>
+        <button id="save-admin-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium">저장하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const defaultData = {
+      adminPw: "1234",
+      members: [
+        { id: 1, name: "김민준", icon: "fa-user", selected: true, message: "오늘 데이트 즐거웠어! 내일 또 이야기하자." },
+        { id: 2, name: "이서연", icon: "fa-user", selected: false, message: "" },
+        { id: 3, name: "박도현", icon: "fa-user", selected: true, message: "아까 웃을 때 정말 예뻤어." },
+        { id: 4, name: "최지우", icon: "fa-user", selected: false, message: "" },
+        { id: 5, name: "정하준", icon: "fa-user", selected: false, message: "" },
+        { id: 6, name: "윤아린", icon: "fa-user", selected: false, message: "" },
+        { id: 7, name: "강건우", icon: "fa-user", selected: false, message: "" },
+        { id: 8, name: "한소희", icon: "fa-user", selected: false, message: "" },
+        { id: 9, name: "임재현", icon: "fa-user", selected: false, message: "" },
+        { id: 10, name: "송유진", icon: "fa-user", selected: false, message: "" }
+      ]
+    };
+
+    let appData = JSON.parse(localStorage.getItem('love_signal_data')) || defaultData;
+    let receivedHearts = {};
+    let isAnimating = false;
+
+    function createStars() {
+      const container = document.getElementById('stars-container');
+      for (let i = 0; i < 40; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.width = `${Math.random() * 3 + 1}px`;
+        star.style.height = star.style.width;
+        star.style.top = `${Math.random() * 100}%`;
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.animationDuration = `${Math.random() * 3 + 2}s`;
+        container.appendChild(star);
+      }
+    }
+
+    function renderMembers() {
+      const grid = document.getElementById('members-grid');
+      grid.innerHTML = '';
+
+      appData.members.forEach(member => {
+        const hasHeart = receivedHearts[member.id];
+        const card = document.createElement('div');
+        card.id = `member-card-${member.id}`;
+        card.className = `member-card p-4 rounded-2xl text-center flex flex-col items-center justify-center relative cursor-pointer ${hasHeart ? 'has-heart' : ''}`;
+        
+        card.innerHTML = `
+          <div class="w-12 h-12 rounded-full bg-slate-800 border border-blue-400/30 flex items-center justify-center text-blue-300 text-lg mb-2 relative">
+            <i class="fa-solid ${member.icon}"></i>
+            ${hasHeart ? '<span class="absolute -top-1 -right-1 text-blue-400 text-sm animate-bounce"><i class="fa-solid fa-heart"></i></span>' : ''}
+          </div>
+          <span class="text-sm font-medium text-slate-200">${member.name}</span>
+          ${hasHeart ? '<span class="text-[10px] text-blue-300 mt-1 bg-blue-900/60 px-2 py-0.5 rounded-full border border-blue-400/30">시그널도착</span>' : '<span class="text-[10px] text-slate-500 mt-1">대기 중</span>'}
+        `;
+
+        card.onclick = () => {
+          if (receivedHearts[member.id]) {
+            showModal(member.name, member.message);
+          }
+        };
+
+        grid.appendChild(card);
+      });
+    }
+
+    async function startSignalAnimation() {
+      if (isAnimating) return;
+      isAnimating = true;
+
+      const envelope = document.getElementById('envelope');
+      envelope.classList.add('open');
+
+      const selectedMembers = appData.members.filter(m => m.selected);
+      
+      if (selectedMembers.length === 0) {
+        setTimeout(() => {
+          alert('선택된 시그널 대상이 없습니다.');
+          envelope.classList.remove('open');
+          isAnimating = false;
+        }, 800);
+        return;
+      }
+
+      const envelopeRect = envelope.getBoundingClientRect();
+      const startX = envelopeRect.left + envelopeRect.width / 2 - 14;
+      const startY = envelopeRect.top + 40;
+
+      for (let i = 0; i < selectedMembers.length; i++) {
+        const member = selectedMembers[i];
+        const targetCard = document.getElementById(`member-card-${member.id}`);
+        const targetRect = targetCard.getBoundingClientRect();
+        const targetX = targetRect.left + targetRect.width / 2 - 14;
+        const targetY = targetRect.top + targetRect.height / 2 - 14;
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const heart = document.createElement('div');
+        heart.className = 'flying-heart';
+        heart.innerHTML = '<i class="fa-solid fa-heart"></i>';
+        heart.style.left = `${startX}px`;
+        heart.style.top = `${startY}px`;
+        document.body.appendChild(heart);
+
+        requestAnimationFrame(() => {
+          heart.style.transition = 'all 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)';
+          heart.style.left = `${targetX}px`;
+          heart.style.top = `${targetY}px`;
+          heart.style.transform = 'scale(1.2)';
+        });
+
+        setTimeout(() => {
+          heart.remove();
+          receivedHearts[member.id] = true;
+          renderMembers();
+        }, 1200);
+      }
+
+      setTimeout(() => {
+        envelope.classList.remove('open');
+        isAnimating = false;
+      }, selectedMembers.length * 500 + 1500);
+    }
+
+    function showModal(name, text) {
+      document.getElementById('modal-name').innerText = `${name} 님의 시그널`;
+      document.getElementById('modal-text').innerText = text || '메시지가 없습니다.';
+      document.getElementById('message-modal').classList.remove('hidden');
+    }
+
+    function renderAdminPanel() {
+      const container = document.getElementById('admin-members-list');
+      container.innerHTML = '';
+
+      appData.members.forEach((m, idx) => {
+        const item = document.createElement('div');
+        item.className = 'bg-slate-800/60 p-3 rounded-xl border border-slate-700 space-y-2';
+        item.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-blue-400 font-bold">출연자 ${idx + 1}</span>
+            <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
+              <input type="checkbox" id="admin-select-${m.id}" ${m.selected ? 'checked' : ''} class="rounded accent-blue-500">
+              시그널 발송 대상
+            </label>
+          </div>
+          <div class="flex gap-2">
+            <input type="text" id="admin-name-${m.id}" value="${m.name}" placeholder="이름" class="w-1/3 bg-slate-900 border border-slate-700 text-xs text-white px-2.5 py-1.5 rounded-lg">
+            <input type="text" id="admin-msg-${m.id}" value="${m.message || ''}" placeholder="시그널 메시지 내용" class="w-2/3 bg-slate-900 border border-slate-700 text-xs text-white px-2.5 py-1.5 rounded-lg">
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    document.getElementById('envelope').addEventListener('click', startSignalAnimation);
+    document.getElementById('close-modal-btn').onclick = () => document.getElementById('message-modal').classList.add('hidden');
+    document.getElementById('confirm-modal-btn').onclick = () => document.getElementById('message-modal').classList.add('hidden');
+
+    document.getElementById('admin-btn').onclick = () => {
+      document.getElementById('admin-auth-modal').classList.remove('hidden');
+    };
+
+    document.getElementById('cancel-auth-btn').onclick = () => {
+      document.getElementById('admin-auth-modal').classList.add('hidden');
+    };
+
+    document.getElementById('submit-auth-btn').onclick = () => {
+      const pw = document.getElementById('admin-pw-input').value;
+      if (pw === appData.adminPw) {
+        document.getElementById('admin-auth-modal').classList.add('hidden');
+        document.getElementById('admin-pw-input').value = '';
+        renderAdminPanel();
+        document.getElementById('admin-panel-modal').classList.remove('hidden');
+      } else {
+        alert('비밀번호가 올바르지 않습니다.');
+      }
+    };
+
+    document.getElementById('close-admin-btn').onclick = () => {
+      document.getElementById('admin-panel-modal').classList.add('hidden');
+    };
+
+    document.getElementById('save-admin-btn').onclick = () => {
+      appData.members.forEach(m => {
+        const nameInput = document.getElementById(`admin-name-${m.id}`);
+        const msgInput = document.getElementById(`admin-msg-${m.id}`);
+        const selectCheck = document.getElementById(`admin-select-${m.id}`);
+
+        if (nameInput) m.name = nameInput.value;
+        if (msgInput) m.message = msgInput.value;
+        if (selectCheck) m.selected = selectCheck.checked;
+      });
+
+      localStorage.setItem('love_signal_data', JSON.stringify(appData));
+      receivedHearts = {};
+      renderMembers();
+      document.getElementById('admin-panel-modal').classList.add('hidden');
+      alert('설정이 저장되었습니다!');
+    };
+
+    document.getElementById('change-pw-btn').onclick = () => {
+      const newPw = prompt('새로운 관리자 비밀번호를 입력하세요:');
+      if (newPw) {
+        appData.adminPw = newPw;
+        localStorage.setItem('love_signal_data', JSON.stringify(appData));
+        alert('비밀번호가 변경되었습니다.');
+      }
+    };
+
+    createStars();
+    renderMembers();
+  </script>
+</body>
+</html>
