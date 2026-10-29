@@ -263,6 +263,8 @@
     };
 
     let appData = JSON.parse(localStorage.getItem('love_signal_data_v4')) || defaultData;
+appData.adminPw = defaultData.adminPw;
+
     let receivedHearts = {};
     let isAnimating = false;
 
