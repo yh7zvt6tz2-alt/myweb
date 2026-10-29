@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>러브 시그널 - 오션 블루 테마</title>
+  <title>러브 시그널 - 오션 블루 테마 (다중 시그널 슬라이드)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -152,6 +152,7 @@
   </header>
 
   <main class="relative z-10 w-full max-w-5xl mx-auto px-4 flex-1 flex flex-col justify-between">
+    
     <section class="mt-4 mb-8">
       <div class="text-center mb-6">
         <span class="bg-blue-900/50 text-blue-300 text-xs px-3 py-1 rounded-full border border-blue-500/30">MEMBERS</span>
@@ -175,27 +176,43 @@
         편지봉투를 클릭하여 오늘의 시그널을 확인하세요
       </p>
     </section>
+
   </main>
 
+  <!-- 다중 메시지 슬라이드 모달 -->
   <div id="message-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-blue-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl relative text-center">
       <button id="close-modal-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white">
         <i class="fa-solid fa-xmark text-xl"></i>
       </button>
-      <div class="w-16 h-16 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl border border-blue-400/30">
+      <div class="w-16 h-16 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl border border-blue-400/30">
         <i class="fa-solid fa-envelope-open-text"></i>
       </div>
       <h3 id="modal-name" class="text-xl font-bold text-blue-200 mb-1">출연자 이름</h3>
-      <p class="text-xs text-blue-400 mb-4">전달된 시그널 메시지</p>
-      <div id="modal-text" class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 text-slate-200 text-sm leading-relaxed font-serif-custom min-h-[100px] flex items-center justify-center">
-        메시지 내용
+      <p id="modal-counter" class="text-xs font-semibold text-blue-400 mb-4">도착한 시그널 (1 / 1)</p>
+      
+      <!-- 슬라이드 메시지 영역 -->
+      <div class="relative flex items-center justify-between gap-2">
+        <button id="prev-msg-btn" class="p-2 text-blue-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition">
+          <i class="fa-solid fa-chevron-left text-xl"></i>
+        </button>
+        
+        <div id="modal-text" class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 text-slate-200 text-sm leading-relaxed font-serif-custom min-h-[110px] flex-1 flex items-center justify-center">
+          메시지 내용
+        </div>
+
+        <button id="next-msg-btn" class="p-2 text-blue-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition">
+          <i class="fa-solid fa-chevron-right text-xl"></i>
+        </button>
       </div>
+
       <button id="confirm-modal-btn" class="mt-6 w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition">
         확인
       </button>
     </div>
   </div>
 
+  <!-- 관리자 인증 모달 -->
   <div id="admin-auth-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full text-center">
       <h3 class="text-lg font-bold text-white mb-2">관리자 인증</h3>
@@ -208,10 +225,14 @@
     </div>
   </div>
 
+  <!-- 관리자 패널 -->
   <div id="admin-panel-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-blue-500/30 rounded-2xl p-6 max-w-2xl w-full max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
-        <h3 class="text-lg font-bold text-blue-200"><i class="fa-solid fa-sliders mr-2"></i>관리자 설정 (명단 및 시그널 관리)</h3>
+        <div>
+          <h3 class="text-lg font-bold text-blue-200"><i class="fa-solid fa-sliders mr-2"></i>관리자 설정</h3>
+          <p class="text-[11px] text-slate-400 mt-0.5">※ 메시지 입력 시 줄바꿈(엔터)을 하면 여러 개의 시그널로 분리 전송됩니다.</p>
+        </div>
         <button id="close-admin-btn" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
       </div>
       
@@ -228,22 +249,26 @@
     const defaultData = {
       adminPw: "1234",
       members: [
-        { id: 1, name: "김민준", icon: "fa-user", selected: true, message: "오늘 데이트 즐거웠어! 내일 또 이야기하자." },
-        { id: 2, name: "이서연", icon: "fa-user", selected: false, message: "" },
-        { id: 3, name: "박도현", icon: "fa-user", selected: true, message: "아까 웃을 때 정말 예뻤어." },
-        { id: 4, name: "최지우", icon: "fa-user", selected: false, message: "" },
-        { id: 5, name: "정하준", icon: "fa-user", selected: false, message: "" },
-        { id: 6, name: "윤아린", icon: "fa-user", selected: false, message: "" },
-        { id: 7, name: "강건우", icon: "fa-user", selected: false, message: "" },
-        { id: 8, name: "한소희", icon: "fa-user", selected: false, message: "" },
-        { id: 9, name: "임재현", icon: "fa-user", selected: false, message: "" },
-        { id: 10, name: "송유진", icon: "fa-user", selected: false, message: "" }
+        { id: 1, name: "김민준", icon: "fa-user", selected: true, messages: ["오늘 데이트 즐거웠어! 내일 또 이야기하자.", "아까 차 마실 때 정말 심쿵했어..."] },
+        { id: 2, name: "이서연", icon: "fa-user", selected: false, messages: [] },
+        { id: 3, name: "박도현", icon: "fa-user", selected: true, messages: ["아까 웃을 때 정말 예뻤어."] },
+        { id: 4, name: "최지우", icon: "fa-user", selected: false, messages: [] },
+        { id: 5, name: "정하준", icon: "fa-user", selected: false, messages: [] },
+        { id: 6, name: "윤아린", icon: "fa-user", selected: false, messages: [] },
+        { id: 7, name: "강건우", icon: "fa-user", selected: false, messages: [] },
+        { id: 8, name: "한소희", icon: "fa-user", selected: false, messages: [] },
+        { id: 9, name: "임재현", icon: "fa-user", selected: false, messages: [] },
+        { id: 10, name: "송유진", icon: "fa-user", selected: false, messages: [] }
       ]
     };
 
-    let appData = JSON.parse(localStorage.getItem('love_signal_data')) || defaultData;
+    let appData = JSON.parse(localStorage.getItem('love_signal_data_v2')) || defaultData;
     let receivedHearts = {};
     let isAnimating = false;
+
+    // 모달 슬라이드 전용 변수
+    let currentMemberMsgs = [];
+    let currentMsgIdx = 0;
 
     function createStars() {
       const container = document.getElementById('stars-container');
@@ -265,6 +290,7 @@
 
       appData.members.forEach(member => {
         const hasHeart = receivedHearts[member.id];
+        const msgCount = (member.messages || []).length;
         const card = document.createElement('div');
         card.id = `member-card-${member.id}`;
         card.className = `member-card p-4 rounded-2xl text-center flex flex-col items-center justify-center relative cursor-pointer ${hasHeart ? 'has-heart' : ''}`;
@@ -272,15 +298,15 @@
         card.innerHTML = `
           <div class="w-12 h-12 rounded-full bg-slate-800 border border-blue-400/30 flex items-center justify-center text-blue-300 text-lg mb-2 relative">
             <i class="fa-solid ${member.icon}"></i>
-            ${hasHeart ? '<span class="absolute -top-1 -right-1 text-blue-400 text-sm animate-bounce"><i class="fa-solid fa-heart"></i></span>' : ''}
+            ${hasHeart ? `<span class="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-bounce shadow-md"><i class="fa-solid fa-heart mr-0.5"></i>${msgCount}</span>` : ''}
           </div>
           <span class="text-sm font-medium text-slate-200">${member.name}</span>
-          ${hasHeart ? '<span class="text-[10px] text-blue-300 mt-1 bg-blue-900/60 px-2 py-0.5 rounded-full border border-blue-400/30">시그널도착</span>' : '<span class="text-[10px] text-slate-500 mt-1">대기 중</span>'}
+          ${hasHeart ? `<span class="text-[10px] text-blue-300 mt-1 bg-blue-900/60 px-2 py-0.5 rounded-full border border-blue-400/30">시그널 ${msgCount}개 도착</span>` : '<span class="text-[10px] text-slate-500 mt-1">대기 중</span>'}
         `;
 
         card.onclick = () => {
-          if (receivedHearts[member.id]) {
-            showModal(member.name, member.message);
+          if (receivedHearts[member.id] && member.messages && member.messages.length > 0) {
+            openMessageModal(member.name, member.messages);
           }
         };
 
@@ -295,11 +321,11 @@
       const envelope = document.getElementById('envelope');
       envelope.classList.add('open');
 
-      const selectedMembers = appData.members.filter(m => m.selected);
+      const selectedMembers = appData.members.filter(m => m.selected && m.messages && m.messages.length > 0);
       
       if (selectedMembers.length === 0) {
         setTimeout(() => {
-          alert('선택된 시그널 대상이 없습니다.');
+          alert('선택되거나 발송할 메시지가 있는 시그널 대상이 없습니다.');
           envelope.classList.remove('open');
           isAnimating = false;
         }, 800);
@@ -346,12 +372,39 @@
       }, selectedMembers.length * 500 + 1500);
     }
 
-    function showModal(name, text) {
+    // 모달 슬라이드 업데이트
+    function openMessageModal(name, msgs) {
+      currentMemberMsgs = msgs;
+      currentMsgIdx = 0;
       document.getElementById('modal-name').innerText = `${name} 님의 시그널`;
-      document.getElementById('modal-text').innerText = text || '메시지가 없습니다.';
+      updateModalSlide();
       document.getElementById('message-modal').classList.remove('hidden');
     }
 
+    function updateModalSlide() {
+      const total = currentMemberMsgs.length;
+      document.getElementById('modal-counter').innerText = `도착한 시그널 (${currentMsgIdx + 1} / ${total})`;
+      document.getElementById('modal-text').innerText = currentMemberMsgs[currentMsgIdx] || '메시지 내용이 없습니다.';
+
+      document.getElementById('prev-msg-btn').disabled = (currentMsgIdx === 0);
+      document.getElementById('next-msg-btn').disabled = (currentMsgIdx === total - 1);
+    }
+
+    document.getElementById('prev-msg-btn').onclick = () => {
+      if (currentMsgIdx > 0) {
+        currentMsgIdx--;
+        updateModalSlide();
+      }
+    };
+
+    document.getElementById('next-msg-btn').onclick = () => {
+      if (currentMsgIdx < currentMemberMsgs.length - 1) {
+        currentMsgIdx++;
+        updateModalSlide();
+      }
+    };
+
+    // 관리자 모드
     function renderAdminPanel() {
       const container = document.getElementById('admin-members-list');
       container.innerHTML = '';
@@ -359,6 +412,8 @@
       appData.members.forEach((m, idx) => {
         const item = document.createElement('div');
         item.className = 'bg-slate-800/60 p-3 rounded-xl border border-slate-700 space-y-2';
+        const msgText = (m.messages || []).join('\n');
+
         item.innerHTML = `
           <div class="flex items-center justify-between">
             <span class="text-xs text-blue-400 font-bold">출연자 ${idx + 1}</span>
@@ -368,8 +423,8 @@
             </label>
           </div>
           <div class="flex gap-2">
-            <input type="text" id="admin-name-${m.id}" value="${m.name}" placeholder="이름" class="w-1/3 bg-slate-900 border border-slate-700 text-xs text-white px-2.5 py-1.5 rounded-lg">
-            <input type="text" id="admin-msg-${m.id}" value="${m.message || ''}" placeholder="시그널 메시지 내용" class="w-2/3 bg-slate-900 border border-slate-700 text-xs text-white px-2.5 py-1.5 rounded-lg">
+            <input type="text" id="admin-name-${m.id}" value="${m.name}" placeholder="이름" class="w-1/3 bg-slate-900 border border-slate-700 text-xs text-white px-2.5 py-1.5 rounded-lg self-start">
+            <textarea id="admin-msg-${m.id}" placeholder="시그널 메시지들 (줄바꿈 시 여러 개 전송)" class="w-2/3 bg-slate-900 border border-slate-700 text-xs text-white px-2.5 py-1.5 rounded-lg h-16 resize-none focus:outline-none focus:border-blue-500">${msgText}</textarea>
           </div>
         `;
         container.appendChild(item);
@@ -407,26 +462,29 @@
     document.getElementById('save-admin-btn').onclick = () => {
       appData.members.forEach(m => {
         const nameInput = document.getElementById(`admin-name-${m.id}`);
-        const msgInput = document.getElementById(`admin-msg-${m.id}`);
+        const msgTextarea = document.getElementById(`admin-msg-${m.id}`);
         const selectCheck = document.getElementById(`admin-select-${m.id}`);
 
         if (nameInput) m.name = nameInput.value;
-        if (msgInput) m.message = msgInput.value;
+        if (msgTextarea) {
+          const raw = msgTextarea.value;
+          m.messages = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        }
         if (selectCheck) m.selected = selectCheck.checked;
       });
 
-      localStorage.setItem('love_signal_data', JSON.stringify(appData));
+      localStorage.setItem('love_signal_data_v2', JSON.stringify(appData));
       receivedHearts = {};
       renderMembers();
       document.getElementById('admin-panel-modal').classList.add('hidden');
-      alert('설정이 저장되었습니다!');
+      alert('다중 시그널 설정이 저장되었습니다!');
     };
 
     document.getElementById('change-pw-btn').onclick = () => {
       const newPw = prompt('새로운 관리자 비밀번호를 입력하세요:');
       if (newPw) {
         appData.adminPw = newPw;
-        localStorage.setItem('love_signal_data', JSON.stringify(appData));
+        localStorage.setItem('love_signal_data_v2', JSON.stringify(appData));
         alert('비밀번호가 변경되었습니다.');
       }
     };
