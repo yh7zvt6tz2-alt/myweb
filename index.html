@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>러브 시그널 - 오션 블루 테마 (다중 시그널 개별 동적 작성)</title>
+  <title>러브 시그널 - 8일차 회차별 아카이브</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -143,7 +143,7 @@
       <h1 class="text-3xl font-bold font-serif-custom tracking-wide text-blue-200 flex items-center gap-2">
         <i class="fa-solid fa-heart-pulse text-blue-400"></i> LOVE SIGNAL
       </h1>
-      <p class="text-sm text-blue-300/70 mt-1">오늘의 마음이 담긴 시그널을 확인하세요</p>
+      <p class="text-sm text-blue-300/70 mt-1">회차별 마음이 담긴 시그널 아카이브</p>
     </div>
     
     <button id="admin-btn" class="p-3 bg-slate-800/80 hover:bg-slate-700 text-blue-300 rounded-full border border-blue-500/30 transition shadow-lg">
@@ -153,16 +153,28 @@
 
   <main class="relative z-10 w-full max-w-5xl mx-auto px-4 flex-1 flex flex-col justify-between">
     
-    <section class="mt-4 mb-8">
-      <div class="text-center mb-6">
-        <span class="bg-blue-900/50 text-blue-300 text-xs px-3 py-1 rounded-full border border-blue-500/30">MEMBERS</span>
-        <h2 class="text-xl font-medium text-slate-200 mt-2">출연진 시그널 현황</h2>
+    <!-- 상단: 1일차 ~ 8일차 회차 선택 탭 -->
+    <section class="mt-2 mb-4">
+      <div class="flex items-center justify-between mb-2 px-1">
+        <span class="text-xs font-semibold text-blue-300 uppercase tracking-wider"><i class="fa-solid fa-calendar-days mr-1"></i> 시그널 회차 선택</span>
+        <span id="current-day-badge" class="text-xs bg-blue-600 text-white px-2.5 py-0.5 rounded-full font-bold">Day 1</span>
+      </div>
+      <div id="day-tabs-container" class="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <!-- JS로 Day 1 ~ Day 8 버튼 생성 -->
+      </div>
+    </section>
+
+    <!-- 1. 출연진 명단 (10명) -->
+    <section class="mt-2 mb-6">
+      <div class="text-center mb-4">
+        <h2 id="section-title" class="text-lg font-medium text-slate-200">1일차 시그널 현황</h2>
       </div>
 
       <div id="members-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"></div>
     </section>
 
-    <section class="flex flex-col items-center justify-center my-8">
+    <!-- 2. 하단: 시그널 보내기 편지 봉투 -->
+    <section class="flex flex-col items-center justify-center my-4">
       <div id="envelope-container" class="envelope-wrapper">
         <div id="envelope" class="envelope">
           <div class="envelope-flap"></div>
@@ -173,7 +185,7 @@
         </div>
       </div>
       <p id="instruction-text" class="text-sm text-blue-300/80 mt-6 font-serif-custom animate-pulse">
-        편지봉투를 클릭하여 오늘의 시그널을 확인하세요
+        편지봉투를 클릭하여 현재 선택된 회차의 시그널을 확인하세요
       </p>
     </section>
 
@@ -230,12 +242,15 @@
     <div class="bg-slate-900 border border-blue-500/30 rounded-2xl p-6 max-w-2xl w-full max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
         <div>
-          <h3 class="text-lg font-bold text-blue-200"><i class="fa-solid fa-sliders mr-2"></i>관리자 설정 (다중 시그널 작성)</h3>
-          <p class="text-[11px] text-slate-400 mt-0.5">※ 각 출연자별로 원하는 만큼 [메시지 추가] 버튼을 눌러 개별 시그널을 자유롭게 작성하세요.</p>
+          <h3 class="text-lg font-bold text-blue-200"><i class="fa-solid fa-sliders mr-2"></i>관리자 설정 (<span id="admin-panel-day-title">Day 1</span>)</h3>
+          <p class="text-[11px] text-slate-400 mt-0.5">※ 각 회차(Day 1 ~ Day 8)별로 출연자별 발송 대상 및 시그널 메시지를 각각 관리합니다.</p>
         </div>
         <button id="close-admin-btn" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
       </div>
       
+      <!-- 관리자 패널 내 회차 전환 탭 -->
+      <div id="admin-day-tabs" class="flex gap-1.5 overflow-x-auto pb-3 mb-2 border-b border-slate-800"></div>
+
       <div class="flex-1 overflow-y-auto space-y-4 pr-2" id="admin-members-list"></div>
 
       <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
@@ -246,26 +261,38 @@
   </div>
 
   <script>
+    // 8일차(Day 1 ~ Day 8) 기본 데이터 템플릿 생성 함수
+    function createDefaultDaysData() {
+      let daysObj = {};
+      for (let d = 1; d <= 8; d++) {
+        daysObj[`day_${d}`] = {
+          members: [
+            { id: 1, name: "김민준", icon: "fa-user", selected: d === 1, messages: d === 1 ? ["오늘 데이트 즐거웠어! 내일 또 이야기하자."] : [] },
+            { id: 2, name: "이서연", icon: "fa-user", selected: false, messages: [] },
+            { id: 3, name: "박도현", icon: "fa-user", selected: d === 1, messages: d === 1 ? ["아까 웃을 때 정말 예뻤어."] : [] },
+            { id: 4, name: "최지우", icon: "fa-user", selected: false, messages: [] },
+            { id: 5, name: "정하준", icon: "fa-user", selected: false, messages: [] },
+            { id: 6, name: "윤아린", icon: "fa-user", selected: false, messages: [] },
+            { id: 7, name: "강건우", icon: "fa-user", selected: false, messages: [] },
+            { id: 8, name: "한소희", icon: "fa-user", selected: false, messages: [] },
+            { id: 9, name: "임재현", icon: "fa-user", selected: false, messages: [] },
+            { id: 10, name: "송유진", icon: "fa-user", selected: false, messages: [] }
+          ]
+        };
+      }
+      return daysObj;
+    }
+
     const defaultData = {
       adminPw: "99012",
-      members: [
-        { id: 1, name: "김민준", icon: "fa-user", selected: true, messages: ["오늘 데이트 즐거웠어! 내일 또 이야기하자.", "아까 차 마실 때 정말 심쿵했어..."] },
-        { id: 2, name: "이서연", icon: "fa-user", selected: false, messages: [] },
-        { id: 3, name: "박도현", icon: "fa-user", selected: true, messages: ["아까 웃을 때 정말 예뻤어."] },
-        { id: 4, name: "최지우", icon: "fa-user", selected: false, messages: [] },
-        { id: 5, name: "정하준", icon: "fa-user", selected: false, messages: [] },
-        { id: 6, name: "윤아린", icon: "fa-user", selected: false, messages: [] },
-        { id: 7, name: "강건우", icon: "fa-user", selected: false, messages: [] },
-        { id: 8, name: "한소희", icon: "fa-user", selected: false, messages: [] },
-        { id: 9, name: "임재현", icon: "fa-user", selected: false, messages: [] },
-        { id: 10, name: "송유진", icon: "fa-user", selected: false, messages: [] }
-      ]
+      days: createDefaultDaysData()
     };
 
-    let appData = JSON.parse(localStorage.getItem('love_signal_data_v4')) || defaultData;
-appData.adminPw = defaultData.adminPw;
+    let appData = JSON.parse(localStorage.getItem('love_signal_data_8days_v1')) || defaultData;
+    appData.adminPw = defaultData.adminPw; // 비밀번호 강제 동기화
 
-    let receivedHearts = {};
+    let currentDay = 1; // 현재 선택된 회차 (1 ~ 8)
+    let dayReceivedHearts = {}; 
     let isAnimating = false;
 
     // 모달 슬라이드 전용 변수
@@ -286,12 +313,41 @@ appData.adminPw = defaultData.adminPw;
       }
     }
 
+    // 메인 화면 회차 탭 렌더링
+    function renderDayTabs() {
+      const container = document.getElementById('day-tabs-container');
+      container.innerHTML = '';
+
+      for (let d = 1; d <= 8; d++) {
+        const btn = document.createElement('button');
+        const isActive = (currentDay === d);
+        btn.className = `px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap border ${
+          isActive 
+            ? 'bg-blue-600 text-white border-blue-400 shadow-lg shadow-blue-600/30' 
+            : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700'
+        }`;
+        btn.innerHTML = `<i class="fa-solid fa-heart mr-1.5 ${isActive ? 'text-white' : 'text-blue-400'}"></i>Day ${d}`;
+        btn.onclick = () => {
+          currentDay = d;
+          document.getElementById('current-day-badge').innerText = `Day ${d}`;
+          document.getElementById('section-title').innerText = `${d}일차 시그널 현황`;
+          renderDayTabs();
+          renderMembers();
+        };
+        container.appendChild(btn);
+      }
+    }
+
     function renderMembers() {
       const grid = document.getElementById('members-grid');
       grid.innerHTML = '';
 
-      appData.members.forEach(member => {
-        const hasHeart = receivedHearts[member.id];
+      const dayKey = `day_${currentDay}`;
+      const dayData = appData.days[dayKey] || { members: [] };
+      const currentReceived = dayReceivedHearts[currentDay] || {};
+
+      dayData.members.forEach(member => {
+        const hasHeart = currentReceived[member.id];
         const msgCount = (member.messages || []).length;
         const card = document.createElement('div');
         card.id = `member-card-${member.id}`;
@@ -303,12 +359,12 @@ appData.adminPw = defaultData.adminPw;
             ${hasHeart ? `<span class="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-bounce shadow-md"><i class="fa-solid fa-heart mr-0.5"></i>${msgCount}</span>` : ''}
           </div>
           <span class="text-sm font-medium text-slate-200">${member.name}</span>
-          ${hasHeart ? `<span class="text-[10px] text-blue-300 mt-1 bg-blue-900/60 px-2 py-0.5 rounded-full border border-blue-400/30">시그널 ${msgCount}개 도착</span>` : '<span class="text-[10px] text-slate-500 mt-1">대기 중</span>'}
+          ${hasHeart ? `<span class="text-[10px] text-blue-300 mt-1 bg-blue-900/60 px-2 py-0.5 rounded-full border border-blue-400/30">시그널 ${msgCount}개</span>` : '<span class="text-[10px] text-slate-500 mt-1">대기 중</span>'}
         `;
 
         card.onclick = () => {
-          if (receivedHearts[member.id] && member.messages && member.messages.length > 0) {
-            openMessageModal(member.name, member.messages);
+          if (currentReceived[member.id] && member.messages && member.messages.length > 0) {
+            openMessageModal(`Day ${currentDay} - ${member.name}`, member.messages);
           }
         };
 
@@ -323,15 +379,21 @@ appData.adminPw = defaultData.adminPw;
       const envelope = document.getElementById('envelope');
       envelope.classList.add('open');
 
-      const selectedMembers = appData.members.filter(m => m.selected && m.messages && m.messages.length > 0);
+      const dayKey = `day_${currentDay}`;
+      const dayData = appData.days[dayKey] || { members: [] };
+      const selectedMembers = dayData.members.filter(m => m.selected && m.messages && m.messages.length > 0);
       
       if (selectedMembers.length === 0) {
         setTimeout(() => {
-          alert('선택되거나 발송할 메시지가 있는 시그널 대상이 없습니다.');
+          alert(`[Day ${currentDay}] 선택되거나 발송할 메시지가 있는 시그널 대상이 없습니다.`);
           envelope.classList.remove('open');
           isAnimating = false;
         }, 800);
         return;
+      }
+
+      if (!dayReceivedHearts[currentDay]) {
+        dayReceivedHearts[currentDay] = {};
       }
 
       const envelopeRect = envelope.getBoundingClientRect();
@@ -341,6 +403,7 @@ appData.adminPw = defaultData.adminPw;
       for (let i = 0; i < selectedMembers.length; i++) {
         const member = selectedMembers[i];
         const targetCard = document.getElementById(`member-card-${member.id}`);
+        if (!targetCard) continue;
         const targetRect = targetCard.getBoundingClientRect();
         const targetX = targetRect.left + targetRect.width / 2 - 14;
         const targetY = targetRect.top + targetRect.height / 2 - 14;
@@ -363,7 +426,7 @@ appData.adminPw = defaultData.adminPw;
 
         setTimeout(() => {
           heart.remove();
-          receivedHearts[member.id] = true;
+          dayReceivedHearts[currentDay][member.id] = true;
           renderMembers();
         }, 1200);
       }
@@ -375,10 +438,10 @@ appData.adminPw = defaultData.adminPw;
     }
 
     // 모달 슬라이드 업데이트
-    function openMessageModal(name, msgs) {
+    function openMessageModal(title, msgs) {
       currentMemberMsgs = msgs;
       currentMsgIdx = 0;
-      document.getElementById('modal-name').innerText = `${name} 님의 시그널`;
+      document.getElementById('modal-name').innerText = title;
       updateModalSlide();
       document.getElementById('message-modal').classList.remove('hidden');
     }
@@ -407,37 +470,86 @@ appData.adminPw = defaultData.adminPw;
     };
 
     // 동적 메시지 입력 필드 생성 함수
+    let adminEditingDay = 1;
+
     function addMsgInput(memberId, val = '') {
       const listDiv = document.getElementById(`msg-inputs-list-${memberId}`);
       if (!listDiv) return;
 
-      const msgCount = listDiv.children.length + 1;
       const row = document.createElement('div');
       row.className = 'flex items-center gap-2 msg-row';
       row.innerHTML = `
-        <span class="text-[10px] text-blue-400 font-bold min-w-[36px]">#${msgCount}</span>
+        <span class="text-[10px] text-blue-400 font-bold min-w-[36px]">시그널</span>
         <input type="text" value="${val.replace(/"/g, '&quot;')}" placeholder="시그널 메시지 내용" class="msg-input flex-1 bg-slate-900 border border-slate-700 text-xs text-white px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-blue-500">
         <button type="button" class="del-btn text-rose-400 hover:text-rose-300 px-1.5 py-1 text-xs"><i class="fa-solid fa-trash-can"></i></button>
       `;
 
       row.querySelector('.del-btn').onclick = () => {
         row.remove();
-        // 삭제 후 인덱스 수식 재정렬
-        Array.from(listDiv.children).forEach((child, idx) => {
-          const numSpan = child.querySelector('span');
-          if (numSpan) numSpan.innerText = `#${idx + 1}`;
-        });
       };
 
       listDiv.appendChild(row);
     }
 
-    // 관리자 모드 패널 렌더링
-    function renderAdminPanel() {
+    // 관리자 패널 내 회차 탭 렌더링
+    function renderAdminDayTabs() {
+      const container = document.getElementById('admin-day-tabs');
+      container.innerHTML = '';
+
+      for (let d = 1; d <= 8; d++) {
+        const btn = document.createElement('button');
+        const isActive = (adminEditingDay === d);
+        btn.type = 'button';
+        btn.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap border ${
+          isActive 
+            ? 'bg-blue-600 text-white border-blue-400' 
+            : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+        }`;
+        btn.innerText = `Day ${d}`;
+        btn.onclick = () => {
+          saveAdminCurrentDayDataToMemory();
+          adminEditingDay = d;
+          document.getElementById('admin-panel-day-title').innerText = `Day ${d}`;
+          renderAdminDayTabs();
+          renderAdminMemberList();
+        };
+        container.appendChild(btn);
+      }
+    }
+
+    // 현재 관리자 창에 입력된 값을 appData 메모리에 반영
+    function saveAdminCurrentDayDataToMemory() {
+      const dayKey = `day_${adminEditingDay}`;
+      if (!appData.days[dayKey]) return;
+
+      appData.days[dayKey].members.forEach(m => {
+        const nameInput = document.getElementById(`admin-name-${m.id}`);
+        const selectCheck = document.getElementById(`admin-select-${m.id}`);
+        const listDiv = document.getElementById(`msg-inputs-list-${m.id}`);
+
+        if (nameInput) m.name = nameInput.value;
+        if (selectCheck) m.selected = selectCheck.checked;
+
+        if (listDiv) {
+          const inputs = listDiv.querySelectorAll('.msg-input');
+          const msgs = [];
+          inputs.forEach(inp => {
+            const val = inp.value.trim();
+            if (val) msgs.push(val);
+          });
+          m.messages = msgs;
+        }
+      });
+    }
+
+    function renderAdminMemberList() {
       const container = document.getElementById('admin-members-list');
       container.innerHTML = '';
 
-      appData.members.forEach((m, idx) => {
+      const dayKey = `day_${adminEditingDay}`;
+      const dayData = appData.days[dayKey] || { members: [] };
+
+      dayData.members.forEach((m, idx) => {
         const item = document.createElement('div');
         item.className = 'bg-slate-800/60 p-4 rounded-xl border border-slate-700 space-y-3';
 
@@ -456,7 +568,7 @@ appData.adminPw = defaultData.adminPw;
           <!-- 메시지 개별 목록 -->
           <div class="space-y-2">
             <div class="flex items-center justify-between">
-              <span class="text-[11px] text-slate-400 font-medium"><i class="fa-solid fa-envelope mr-1"></i>시그널 메시지 목록</span>
+              <span class="text-[11px] text-slate-400 font-medium"><i class="fa-solid fa-envelope mr-1"></i>Day ${adminEditingDay} 시그널 메시지 목록</span>
               <button type="button" onclick="addMsgInput(${m.id})" class="text-[11px] bg-blue-600/80 hover:bg-blue-500 text-white px-2 py-0.5 rounded-md transition">+ 메시지 추가</button>
             </div>
             <div id="msg-inputs-list-${m.id}" class="space-y-1.5 pl-1"></div>
@@ -465,11 +577,12 @@ appData.adminPw = defaultData.adminPw;
 
         container.appendChild(item);
 
-        // 기존 작성된 메시지들 개별 입력 필드로 추가
-        const msgs = (m.messages && m.messages.length > 0) ? m.messages : [''];
+        const msgs = (m.messages && m.messages.length > 0) ? m.messages : [];
         msgs.forEach(msgText => addMsgInput(m.id, msgText));
       });
     }
+
+    window.addMsgInput = addMsgInput;
 
     document.getElementById('envelope').addEventListener('click', startSignalAnimation);
     document.getElementById('close-modal-btn').onclick = () => document.getElementById('message-modal').classList.add('hidden');
@@ -488,7 +601,10 @@ appData.adminPw = defaultData.adminPw;
       if (pw === appData.adminPw) {
         document.getElementById('admin-auth-modal').classList.add('hidden');
         document.getElementById('admin-pw-input').value = '';
-        renderAdminPanel();
+        adminEditingDay = currentDay; 
+        document.getElementById('admin-panel-day-title').innerText = `Day ${adminEditingDay}`;
+        renderAdminDayTabs();
+        renderAdminMemberList();
         document.getElementById('admin-panel-modal').classList.remove('hidden');
       } else {
         alert('비밀번호가 올바르지 않습니다.');
@@ -500,42 +616,26 @@ appData.adminPw = defaultData.adminPw;
     };
 
     document.getElementById('save-admin-btn').onclick = () => {
-      appData.members.forEach(m => {
-        const nameInput = document.getElementById(`admin-name-${m.id}`);
-        const selectCheck = document.getElementById(`admin-select-${m.id}`);
-        const listDiv = document.getElementById(`msg-inputs-list-${m.id}`);
+      saveAdminCurrentDayDataToMemory();
 
-        if (nameInput) m.name = nameInput.value;
-        if (selectCheck) m.selected = selectCheck.checked;
-
-        if (listDiv) {
-          const inputs = listDiv.querySelectorAll('.msg-input');
-          const msgs = [];
-          inputs.forEach(inp => {
-            const val = inp.value.trim();
-            if (val) msgs.push(val);
-          });
-          m.messages = msgs;
-        }
-      });
-
-      localStorage.setItem('love_signal_data_v3', JSON.stringify(appData));
-      receivedHearts = {};
+      localStorage.setItem('love_signal_data_8days_v1', JSON.stringify(appData));
+      dayReceivedHearts = {}; 
       renderMembers();
       document.getElementById('admin-panel-modal').classList.add('hidden');
-      alert('개별 다중 시그널 설정이 저장되었습니다!');
+      alert('8일차 회차별 시그널 설정이 모두 저장되었습니다!');
     };
 
     document.getElementById('change-pw-btn').onclick = () => {
       const newPw = prompt('새로운 관리자 비밀번호를 입력하세요:');
       if (newPw) {
         appData.adminPw = newPw;
-        localStorage.setItem('love_signal_data_v3', JSON.stringify(appData));
+        localStorage.setItem('love_signal_data_8days_v1', JSON.stringify(appData));
         alert('비밀번호가 변경되었습니다.');
       }
     };
 
     createStars();
+    renderDayTabs();
     renderMembers();
   </script>
 </body>
